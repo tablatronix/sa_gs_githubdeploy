@@ -3,6 +3,7 @@ sa_gs_githubdeploy
 
 getsimplecms plugin for deploying from github
 
+## UNSTABLE, UNTESTED, PRE ALPHA
 
 This plugin will use github api and present several things to deploy from the getsimple repo.
 * branches

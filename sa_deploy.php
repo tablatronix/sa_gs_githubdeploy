@@ -212,7 +212,7 @@ function sa_deploy_plugin(){
 	start();
 }
 
-function doDeploy($type = 'branch', $typeid = "master", $exc = array()){
+function doDeploy($type = 'branch', $typeid = "master", $key = '', $exc = array()){
 
 	GLOBAL $SA_DEPLOY_USERNAME, $SA_DEPLOY_REPO;
 
@@ -234,7 +234,7 @@ function doDeploy($type = 'branch', $typeid = "master", $exc = array()){
 		'exc'        => $exc
 	);
 
-	exec_action('sa_deploy_predeploy');
+	if(function_exists('exec_action')) exec_action('sa_deploy_predeploy');
 
 	include('sa_deploy/deploy.php');
 

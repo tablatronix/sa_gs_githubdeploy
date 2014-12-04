@@ -74,6 +74,7 @@ function start(){
 		return;
 	}
 
+    echo "<br/>";
     displayReleases();
     echo "<br/>";
     displayBranches();
@@ -187,7 +188,7 @@ function getReleases(){
 	$config = getConfig();
 	$data = Api::call('releases', getConfig() );
 	$data = json_decode($data,true);
-	debugLog($data);
+	// debugLog($data);
 	return $data;
 }
 
@@ -195,7 +196,7 @@ function getBranches(){
 	$config = getConfig();
 	$data = Api::call('branches', getConfig() );
 	$data = json_decode($data,true);
-	debugLog($data);
+	// debugLog($data);
 	return $data;
 }
 
@@ -204,7 +205,7 @@ function getTags(){
 
 	$data = Api::call('tags', getConfig() );
 	$data = json_decode($data,true);
-	debugLog($data);
+	// debugLog($data);
 	return $data;
 }
 
@@ -220,7 +221,7 @@ function doDeploy($type = 'branch', $typeid = "master", $key = '', $exc = array(
 	// array( "files" => array() , "folders" => array() )
 	if(!$exc) 
 	$exc = array(
-	    "files"   => array("tip.zip","deploy.php","lastcommit.hash","deploy.conf","data.hash","sa_deploy.php","gsconfig.php",".htacces"),
+	    "files"   => array("tip.zip","deploy.php","lastcommit.hash","deploy.conf","data.hash","sa_deploy.php","gsconfig.php",".htaccess"),
 	    "folders" => array("backups","plugins","data","sa_deploy")
 	);
 	
@@ -238,7 +239,11 @@ function doDeploy($type = 'branch', $typeid = "master", $key = '', $exc = array(
 
 	include('sa_deploy/deploy.php');
 
-	// echo "<a href=""></a>";
+	// redirect(myself());
+	if($status){
+		echo "<Br/>Finished deploy ";
+		echo "<a class=\"button\" href=\"load.php?id=sa_deploy\">CLICK TO COMPLETE</a>";
+	}	
 }
 
 
@@ -447,6 +452,18 @@ function sa_deploy_css(){
 
 		ul.deploylist li:hover .deploy_button a.label-light{
 			display:none;
+		}
+
+		details {
+			margin-left: 30px;
+			color: #888;
+			font-weight: normal
+		}
+
+		details summary {
+			margin-left: -30px;
+			color: black;
+			font-weight: bold;
 		}
 
 	</style>

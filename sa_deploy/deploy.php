@@ -21,9 +21,9 @@ $downloadzip   = true;  // download zip file
 $removefiles   = false; // remove existing destination or overwrite, use $exc and $excdirs
 $extractfiles  = true;  // extract files to destination
 $copysource    = true;  // copy source files from extract dir if set
-$removesource  = false;  // remove source files from extract dir if set
+$removesource  = true;  // remove source files from extract dir if set
 $removezip     = false;  // remove the zip when done
-$overwrite     = false;  // do not check for already installed
+$overwrite     = true;  // do not check for already installed
 
 // get configuration
 @include_once 'deploy.conf';
@@ -49,7 +49,8 @@ $url            = "https://github.com/$owner/$repo/archive/$typeid.zip";
 $zipfilename    = $reponame."_".$type."_".$typeid.".zip";
 $zipfile        = $dest.$zipfilename;
 
-$extractdirname = "$reponame-$typeid";
+$extractdirname = $reponame.'-'.$typeid;
+$extractdirname = str_replace('-v','-',$extractdirname); // github bugfix for vn.n.n tags, archive names are wrong
 $extractdir     = $dest.$extractdirname;
 
 $checkfilename  = "lastcommit.hash";
@@ -66,6 +67,9 @@ set_time_limit($timeLimit);
 // set_memory_limit($memlimit);
 
 echo "<h1>Deploying repo: <b>$owner | $repo | $type | $typeid</b> to <b>$dest</b></h1><hr><Br/>";
+
+
+$wiperes = $unzipres = $copyres = $wiperepores = $removesource = $removeziprees = true;
 
 
 // @todo if downloadzip false and file not exist auto download
@@ -86,40 +90,52 @@ if($downloadzip){
 
 if($removefiles){
     $wiperes = rmdirRecursively($dest);
-    trace('Wipe deploy', $wiperes);
+    if($wiperes === false) trace('Wipe deploy FAILED',$dest,true);
+    else trace('Wipe deploy', $wiperes);
 }
 
+// extract zip
 if($extractfiles){
     $unzipres = unZip($zipfile,$dest);
 
     if($unzipres) {
-        $unzipstatus = "Extracted to $dest".DIRECTORY_SEPARATOR;
+        $unzipstatus = "Extracted to ".($extractdir);
+        // $unzipstatus = "Extracted to ".realpath($extractdir);
     } else {
-        $unzipstatus = "Extract to $dest".DIRECTORY_SEPARATOR." FAILED";
+        $unzipstatus = "Extract FAILED ".realpath($extractdir);
     }
 
-    trace("Extracting archive", $unzipstatus, !$unzipres );
+    trace("Extracting archive", $unzipstatus, true);
 }
 
 if(!empty($extractdir)){
+    // copy source to dest
     if($copysource){
         $copyres = copy_recursively($extractdir, $dest);
-        trace("Copy $dest$extractdir to $dest",$copyres);
+        if($copyres === false) trace("Copy FAILED $dest$extractdir to $dest",$copyres);
+        else trace("Copy $dest$extractdir to $dest",$copyres);
     }
-
+    // remove source tmp files
     if($removesource){
         $wiperepores = rmdirRecursively($extractdir,true);
-        trace("Remove $dest$reponame-$tag contents",$wiperepores);
+        if($wiperepores === false) trace("Remove FAILED $dest$reponame-$tag contents",$wiperepores);
+        else trace("Remove $dest$reponame-$tag contents",$wiperepores);
 
         rmdir($extractdir);
     }
 }
 
+// Delete the repo zip file
 if($removezip){
-    // Delete the repo zip file
     echo "Remove $zipfile</br>";
-    unlink($zipfile);
+    $removeziprees = unlink($zipfile);
 }
+
+echo "<br/>";
+// print_r(array($wiperes && true, $unzipres && true, $copyres && true, $wiperepores && true, $removesource && true, $removeziprees && true));
+$status = $wiperes && $unzipres && $copyres && $wiperepores && $removesource && $removeziprees;
+if($status) traceSuccess("Deploy",$status);
+else traceSuccess("Deploy",$status);
 
 //////////////////////////////////////////////////////
 // Functions
@@ -236,18 +252,22 @@ function rmdirRecursively($dir,$noExclude=false) {
     # var_dump($noExclude);
 
     $trace.= "Erase dir: " . $dir ."<Br/>";
+    if(!is_dir($dir)){
+        return false;
+    }
 
-    $it = new RecursiveIteratorIterator(
-        new RecursiveDirectoryIterator($dir),
-        RecursiveIteratorIterator::CHILD_FIRST
-    );
+    $dirIter = new RecursiveDirectoryIterator($dir);
+    $iter = new RecursiveIteratorIterator($dirIter,
+                    RecursiveIteratorIterator::CHILD_FIRST,
+                    RecursiveIteratorIterator::CATCH_GET_CHILD
+                );
 
     // FilesystemIterator::SKIP_DOTS ./ 5.3+
 
     $excludeDirsNames = isset($exc["folders"]) ? $exc["folders"] : array();
     $excludeFileNames = isset($exc["files"]) ? $exc["files"] : array();
 
-    foreach ($it as $entry) {
+    foreach ($iter as $entry) {
 
         if ($entry->isDir()) {
             
@@ -313,10 +333,9 @@ function copy_recursively($src, $dest) {
         if (!in_array( $filename, $excludeFileNames)){
             copy($src, $dest);
         }
-    }
+    } else return false;
 
     return $trace;
 }
 
-echo 'Done';
 ?>

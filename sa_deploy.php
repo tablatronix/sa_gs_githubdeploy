@@ -349,10 +349,14 @@ function cache_url($url, $nocache = FALSE) {
         // save the file if there's data
         if ($data AND !$nocache && !isset($data['message'])) {
             file_put_contents($file, $data);
-        } else $data = file_get_contents($file);
-    } else {
-        $data = file_get_contents($file);
-    }
+        } 
+        else {
+             if(file_exists($file)) $data = file_get_contents($file);
+        }
+    } 
+    else {
+		if(file_exists($file)) $data = file_get_contents($file);
+    }        
 
     return $data;
 }

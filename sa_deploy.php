@@ -18,26 +18,26 @@ $SA_DEPLOY_USERNAME = 'GetSimpleCMS';
 $SA_DEPLOY_REPO     = 'GetSimpleCMS';
 
 function init_plugin($PLUGIN_ID){
-	$thisfile = basename(__FILE__, ".php");	// Plugin File
-	$name     = $PLUGIN_ID;
-	$version  = "0.1";
-	$author   = "tablatronix";
-	$url      = "http://getsimple-cms.info";
-	$desc     = "Deploy from github plugin";
-	$type     = "plugins";
-	$func     = "start";
+    $thisfile = basename(__FILE__, ".php"); // Plugin File
+    $name     = $PLUGIN_ID;
+    $version  = "0.1";
+    $author   = "tablatronix";
+    $url      = "http://getsimple-cms.info";
+    $desc     = "Deploy from github plugin";
+    $type     = "plugins";
+    $func     = "start";
 
-	register_plugin($thisfile,$name,$version,$author,$url,$desc,$type,$func);
-	
-	// actions
-	add_action('plugins-sidebar','createSideMenu',array($PLUGIN_ID,'Github Deploy'));
-	add_action('header','sa_deploy_css');
+    register_plugin($thisfile,$name,$version,$author,$url,$desc,$type,$func);
+    
+    // actions
+    add_action('plugins-sidebar','createSideMenu',array($PLUGIN_ID,'Github Deploy'));
+    add_action('header','sa_deploy_css');
 }
 
 if(!function_exists('debugLog')){
-	function debugLog($msg){
-		// echo print_r($msg,true),"<Br>";
-	}
+    function debugLog($msg){
+        // echo print_r($msg,true),"<Br>";
+    }
 }
 
 // init
@@ -45,34 +45,34 @@ if(function_exists('register_plugin')) init_plugin($PLUGIN_ID);
 else start();
 
 function local_i18n_r($token,$default = ''){
-	GLOBAL $i18n;
-	if(isset($i18n[$token])) return $i18n[$token];
-	return $default;
+    GLOBAL $i18n;
+    if(isset($i18n[$token])) return $i18n[$token];
+    return $default;
 }
 
 function start(){
 
-	if(!defined('IN_GS')){
-		echo "<body id=\"nogs\"><html><head>";
-		sa_deploy_css();
-		echo "</head></html></body>";
-	}
+    if(!defined('IN_GS')){
+        echo "<body id=\"nogs\"><html><head>";
+        sa_deploy_css();
+        echo "</head></html></body>";
+    }
 
     echo '<h3 class="floated">'.local_i18n_r('SA_DEPLOY_GH','Deploy From Github');
 
-	$config = getConfig();
+    $config = getConfig();
 
-	echo " <span>".$config['username'].'/'.$config['repo']."</span>";
-	echo '</h3><div class="clear"></div>';
+    echo " <span>".$config['username'].'/'.$config['repo']."</span>";
+    echo '</h3><div class="clear"></div>';
 
-	if(isset($_REQUEST['type']) && isset($_REQUEST['typeid']) && isset($_REQUEST['key'])){
-		$type    = $_REQUEST['type'];
-		$typeid  = $_REQUEST['typeid'];
-		$key     = $_REQUEST['key'];
-		
-		doDeploy($type,$typeid,$key);
-		return;
-	}
+    if(isset($_REQUEST['type']) && isset($_REQUEST['typeid']) && isset($_REQUEST['key'])){
+        $type    = $_REQUEST['type'];
+        $typeid  = $_REQUEST['typeid'];
+        $key     = $_REQUEST['key'];
+        
+        doDeploy($type,$typeid,$key);
+        return;
+    }
 
     echo "<br/>";
     displayReleases();
@@ -85,15 +85,15 @@ function start(){
 
 // key cache
 function addKey($key,$str){
-	GLOBAL $SA_DEPLOY_KEYCACHE;
-	$SA_DEPLOY_KEYCACHE[$key] = $str;
+    GLOBAL $SA_DEPLOY_KEYCACHE;
+    $SA_DEPLOY_KEYCACHE[$key] = $str;
 }
 
 function getKey($str){
-	// nonce this key so deploys can not be replayed or predicted
-	$key = md5($str);
-	addKey($key,$str);
-	return $key;
+    // nonce this key so deploys can not be replayed or predicted
+    $key = md5($str);
+    addKey($key,$str);
+    return $key;
 }
 
 function saveKeyCache(){
@@ -105,145 +105,145 @@ function loadKeyCache(){
 }
 
 function deployButton($type,$typeid){
-	$id = isset($_GET['id']) ? $_GET['id'] : '';
-	$url = '?id='.$id.'&amp;type='.$type.'&amp;typeid='.$typeid.'&amp;key='.getKey($typeid);
-	
-	$str = '<span class="deploy_button"><a class="label label-light" title="'.local_i18n_r('DEPLOY','Deploy!').'" href="'.$url.'">deploy</span></a>';
-	$str .='<span class="deploy_button"><a class="label label-error" title="'.local_i18n_r('DEPLOY','Deploy!').'" href="'.$url.'">deploy</span></a>';
-	return $str;
+    $id = isset($_GET['id']) ? $_GET['id'] : '';
+    $url = '?id='.$id.'&amp;type='.$type.'&amp;typeid='.$typeid.'&amp;key='.getKey($typeid);
+    
+    $str = '<span class="deploy_button"><a class="label label-light" title="'.local_i18n_r('DEPLOY','Deploy!').'" href="'.$url.'">deploy</span></a>';
+    $str .='<span class="deploy_button"><a class="label label-error" title="'.local_i18n_r('DEPLOY','Deploy!').'" href="'.$url.'">deploy</span></a>';
+    return $str;
 }
 
 function displayReleases(){
-	$data = getReleases();
-	
-	echo '<h2>'.local_i18n_r('RELEASES','Releases').'</h2>';
-	
-	if(isset($data['message'])){
-		echo $data['message']."<br>";
-		return;
-	}	
+    $data = getReleases();
+    
+    echo '<h2>'.local_i18n_r('RELEASES','Releases').'</h2>';
+    
+    if(isset($data['message'])){
+        echo $data['message']."<br>";
+        return;
+    }   
 
-	echo '<ul class="deploylist">';
+    echo '<ul class="deploylist">';
 
-	foreach($data as $item){
-		$tag = $item['tag_name'];
-		$name  = $item['name'];
-		$url   = isset($item['html_url']) ? $item['html_url'] : '';
-		$title = '<a href="'.$url.'"  title="'.local_i18n_r('INFO','Info').'" target="_blank">'.$name.'</a>';
-		echo '<li>'.$title.deployButton('release',$tag) . '</li>';
-		}
-	echo "</ul>";
+    foreach($data as $item){
+        $tag = $item['tag_name'];
+        $name  = $item['name'];
+        $url   = isset($item['html_url']) ? $item['html_url'] : '';
+        $title = '<a href="'.$url.'"  title="'.local_i18n_r('INFO','Info').'" target="_blank">'.$name.'</a>';
+        echo '<li>'.$title.deployButton('release',$tag) . '</li>';
+        }
+    echo "</ul>";
 }
 
 
 function displayBranches(){
-	$data = getBranches();
-	
-	echo '<h2>'.local_i18n_r('BRANCHES','Branches').'</h2>';
-	
-	if(isset($data['message'])){
-		echo $data['message']."<br>";
-		return;
-	}	
+    $data = getBranches();
+    
+    echo '<h2>'.local_i18n_r('BRANCHES','Branches').'</h2>';
+    
+    if(isset($data['message'])){
+        echo $data['message']."<br>";
+        return;
+    }   
 
-	echo '<ul class="deploylist">';
+    echo '<ul class="deploylist">';
 
 
-	foreach($data as $item){
-		$name  = $item['name'];
-		$url = 'https://github.com/GetSimpleCMS/GetSimpleCMS/tree/'.$name;
-		$title = '<a href="'.$url.'" title="'.local_i18n_r('INFO','Info').'" target="_blank">'.$name.'</a>';
-		echo '<li>'.$title.deployButton('branch',$name) . '</li>';;		
-	}
-	echo "</ul>";
+    foreach($data as $item){
+        $name  = $item['name'];
+        $url = 'https://github.com/GetSimpleCMS/GetSimpleCMS/tree/'.$name;
+        $title = '<a href="'.$url.'" title="'.local_i18n_r('INFO','Info').'" target="_blank">'.$name.'</a>';
+        echo '<li>'.$title.deployButton('branch',$name) . '</li>';;     
+    }
+    echo "</ul>";
 }
 
 function displayTags(){
-	$data = getTags();
-	
-	echo '<h2>'.local_i18n_r('TAGS','Tags').'</h2>';
-	
-	if(isset($data['message'])){
-		echo $data['message']."<br>";
-		return;
-	}	
+    $data = getTags();
+    
+    echo '<h2>'.local_i18n_r('TAGS','Tags').'</h2>';
+    
+    if(isset($data['message'])){
+        echo $data['message']."<br>";
+        return;
+    }   
 
-	echo '<ul class="deploylist">';
+    echo '<ul class="deploylist">';
 
-	foreach($data as $item){
-		$name  = $item['name'];
-		$url = 'https://github.com/GetSimpleCMS/GetSimpleCMS/tree/'.$name;
-		$title = '<a href="'.$url.'"  title="'.local_i18n_r('INFO','Info').'" target="_blank">'.$name.'</a>';
-		echo '<li>'.$title.deployButton('tag',$name) . '</li>';			
-	}
-	echo "</ul>";
+    foreach($data as $item){
+        $name  = $item['name'];
+        $url = 'https://github.com/GetSimpleCMS/GetSimpleCMS/tree/'.$name;
+        $title = '<a href="'.$url.'"  title="'.local_i18n_r('INFO','Info').'" target="_blank">'.$name.'</a>';
+        echo '<li>'.$title.deployButton('tag',$name) . '</li>';         
+    }
+    echo "</ul>";
 }
 
 function getConfig(){
-	GLOBAL $SA_DEPLOY_USERNAME,$SA_DEPLOY_REPO;
-	return array("username" => $SA_DEPLOY_USERNAME,	"password" => "", "repo" => $SA_DEPLOY_REPO);
+    GLOBAL $SA_DEPLOY_USERNAME,$SA_DEPLOY_REPO;
+    return array("username" => $SA_DEPLOY_USERNAME, "password" => "", "repo" => $SA_DEPLOY_REPO);
 }
 
 function getReleases(){
-	$config = getConfig();
-	$data = Api::call('releases', getConfig() );
-	$data = json_decode($data,true);
-	// debugLog($data);
-	return $data;
+    $config = getConfig();
+    $data = Api::call('releases', getConfig() );
+    $data = json_decode($data,true);
+    // debugLog($data);
+    return $data;
 }
 
 function getBranches(){
-	$config = getConfig();
-	$data = Api::call('branches', getConfig() );
-	$data = json_decode($data,true);
-	// debugLog($data);
-	return $data;
+    $config = getConfig();
+    $data = Api::call('branches', getConfig() );
+    $data = json_decode($data,true);
+    // debugLog($data);
+    return $data;
 }
 
 function getTags(){
-	$config = getConfig();
+    $config = getConfig();
 
-	$data = Api::call('tags', getConfig() );
-	$data = json_decode($data,true);
-	// debugLog($data);
-	return $data;
+    $data = Api::call('tags', getConfig() );
+    $data = json_decode($data,true);
+    // debugLog($data);
+    return $data;
 }
 
 function sa_deploy_plugin(){
-	start();
+    start();
 }
 
 function doDeploy($type = 'branch', $typeid = "master", $key = '', $exc = array()){
 
-	GLOBAL $SA_DEPLOY_USERNAME, $SA_DEPLOY_REPO;
+    GLOBAL $SA_DEPLOY_USERNAME, $SA_DEPLOY_REPO;
 
-	//Exclusion list
-	// array( "files" => array() , "folders" => array() )
-	if(!$exc) 
-	$exc = array(
-	    "files"   => array("tip.zip","deploy.php","lastcommit.hash","deploy.conf","data.hash","sa_deploy.php","gsconfig.php",".htaccess"),
-	    "folders" => array("backups","plugins","data","sa_deploy")
-	);
-	
-	$deployconfig = array(
-		'username'   => $SA_DEPLOY_USERNAME,
-		'password'   => '',
-		'reponame'   => $SA_DEPLOY_REPO,
-		'type'       => $type,
-		'typeid'     => $typeid,
-		'dest'       => '../',
-		'exc'        => $exc
-	);
+    //Exclusion list
+    // array( "files" => array() , "folders" => array() )
+    if(!$exc) 
+    $exc = array(
+        "files"   => array("tip.zip","deploy.php","lastcommit.hash","deploy.conf","data.hash","sa_deploy.php","gsconfig.php",".htaccess"),
+        "folders" => array("backups","plugins","data","sa_deploy")
+    );
+    
+    $deployconfig = array(
+        'username'   => $SA_DEPLOY_USERNAME,
+        'password'   => '',
+        'reponame'   => $SA_DEPLOY_REPO,
+        'type'       => $type,
+        'typeid'     => $typeid,
+        'dest'       => '../',
+        'exc'        => $exc
+    );
 
-	if(function_exists('exec_action')) exec_action('sa_deploy_predeploy');
+    if(function_exists('exec_action')) exec_action('sa_deploy_predeploy');
 
-	include('sa_deploy/deploy.php');
+    include('sa_deploy/deploy.php');
 
-	// redirect(myself());
-	if($status){
-		echo "<Br/>Finished deploy ";
-		echo "<a class=\"button\" href=\"load.php?id=sa_deploy\">CLICK TO COMPLETE</a>";
-	}	
+    // redirect(myself());
+    if($status){
+        echo "<Br/>Finished deploy ";
+        echo "<a class=\"button\" href=\"load.php?id=sa_deploy\">CLICK TO COMPLETE</a>";
+    }   
 }
 
 
@@ -254,33 +254,33 @@ class Api{
     }
 
     public static function releases($configs){
-    	$url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/releases";
-    	return self::callApiGET($url, $configs);
+        $url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/releases";
+        return self::callApiGET($url, $configs);
     }
 
     public static function tag($configs){
-    	$url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/tags/".$configs['tags'];
-    	return self::callApiGET($url, $configs);
+        $url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/tags/".$configs['tags'];
+        return self::callApiGET($url, $configs);
     }
 
     public static function tags($configs){
-    	$url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/tags";
-    	return self::callApiGET($url, $configs);
+        $url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/tags";
+        return self::callApiGET($url, $configs);
     }
 
     public static function branch($configs){
-    	$url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/branches/".$configs['branch'];
-    	return self::callApiGET($url, $configs);
+        $url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/branches/".$configs['branch'];
+        return self::callApiGET($url, $configs);
     }
 
     public static function branches($configs){
-    	$url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/branches";
-    	return self::callApiGET($url, $configs);
+        $url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/branches";
+        return self::callApiGET($url, $configs);
     }
 
     public static function milestones($configs){
-    	$url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/milestones";
-    	return self::callApiGET($url, $configs);
+        $url = "/repos/". $configs["username"] ."/". $configs["repo"] ."/milestones";
+        return self::callApiGET($url, $configs);
     }
 
     public static function issues($configs){
@@ -307,7 +307,7 @@ class Api{
 }
 
 function cache_url($url, $nocache = FALSE) {
-	// @todo do not cache messages api rate limiting
+    // @todo do not cache messages api rate limiting
     // settings
     $cachetime = 604800; //one week
     $where = defined('GSCACHEPATH') ? GSCACHEPATH : 'sa_deploy/cache/';
@@ -355,125 +355,125 @@ function cache_url($url, $nocache = FALSE) {
         }
     } 
     else {
-		if(file_exists($file)) $data = file_get_contents($file);
+        if(file_exists($file)) $data = file_get_contents($file);
     }        
 
     return $data;
 }
 
 function sa_deploy_css(){
-	$css = "
-	<style>
-		/* sa_deploy */
+    $css = "
+    <style>
+        /* sa_deploy */
 
-		#nogs {
-			margin:20px;
-		}
+        #nogs {
+            margin:20px;
+        }
 
-		ul.deploylist {
-			line-height: 16px;
-		}
+        ul.deploylist {
+            line-height: 16px;
+        }
 
-		ul.deploylist .deploy_button{
-			float: right; 
-		}
-		
-		ul.deploylist li {
-			max-width: 800px; /* max width */
-			display:block;
-			width:100%;
-			padding:3px;
-		}
+        ul.deploylist .deploy_button{
+            float: right; 
+        }
+        
+        ul.deploylist li {
+            max-width: 800px; /* max width */
+            display:block;
+            width:100%;
+            padding:3px;
+        }
 
-		ul.deploylist li:hover {
-			background: rgba(0,0,0,0.05); 			
-		}
+        ul.deploylist li:hover {
+            background: rgba(0,0,0,0.05);           
+        }
 
-		#nogs ul.deploylist li a{
-			text-decoration: none;
-			color: #415A66;
-			font-weight: bold;
-			font-family:arial;
-			font-size: 12px;
-		}
+        #nogs ul.deploylist li a{
+            text-decoration: none;
+            color: #415A66;
+            font-weight: bold;
+            font-family:arial;
+            font-size: 12px;
+        }
 
-		#nogs h2 {
-			font-size: 18px;
-			font-family: Georgia, Times, Times New Roman, serif;
-			color: #777;
-			margin: 0 0 20px 0;
-			font-weight: normal;
-		}
+        #nogs h2 {
+            font-size: 18px;
+            font-family: Georgia, Times, Times New Roman, serif;
+            color: #777;
+            margin: 0 0 20px 0;
+            font-weight: normal;
+        }
 
-		#nogs h3 {
-			font-size: 18px;
-			font-weight: normal;
-			font-family: Georgia, Times, Times New Roman, serif;
-			padding: 2px 0 0 0;
-			color: #CF3805;
-			display: block;
-			margin: 0 0 20px 0;
-			font-style: italic;			
-			text-shadow: 1px 1px 0 #FFF;
-		}
+        #nogs h3 {
+            font-size: 18px;
+            font-weight: normal;
+            font-family: Georgia, Times, Times New Roman, serif;
+            padding: 2px 0 0 0;
+            color: #CF3805;
+            display: block;
+            margin: 0 0 20px 0;
+            font-style: italic;         
+            text-shadow: 1px 1px 0 #FFF;
+        }
 
-		#nogs h3 span {
-			color: #999;
-			font-size: 14px;
-		}		
-		
-		#nogs ul.deploylist .label {
-			padding: 1px 6px;
-			border-radius: 3px;
-			text-align: center;
-			margin: 0px 3px;
-		}
+        #nogs h3 span {
+            color: #999;
+            font-size: 14px;
+        }       
+        
+        #nogs ul.deploylist .label {
+            padding: 1px 6px;
+            border-radius: 3px;
+            text-align: center;
+            margin: 0px 3px;
+        }
 
-		#nogs ul.deploylist .label-light {
-			color: #AFC5CF !important;
-			background: #FFF !important;
-			border: 1px solid #AFC5CF !important;
-			padding: 0px 5px;
-		}
+        #nogs ul.deploylist .label-light {
+            color: #AFC5CF !important;
+            background: #FFF !important;
+            border: 1px solid #AFC5CF !important;
+            padding: 0px 5px;
+        }
 
-		#nogs ul.deploylist .label-error{
-			background-color: #C00 !important;
-			color: #F2F2F2;
-		}
+        #nogs ul.deploylist .label-error{
+            background-color: #C00 !important;
+            color: #F2F2F2;
+        }
 
-		/* hover handling */
-		ul.deploylist li .deploy_button a.label-error{
-			display:none;
-		}
+        /* hover handling */
+        ul.deploylist li .deploy_button a.label-error{
+            display:none;
+        }
 
-		ul.deploylist li:hover .deploy_button a.label-error{
-			display:block;
-		}
+        ul.deploylist li:hover .deploy_button a.label-error{
+            display:block;
+        }
 
-		ul.deploylist li .deploy_button a.label-light{
-			display:block;
-		}
+        ul.deploylist li .deploy_button a.label-light{
+            display:block;
+        }
 
-		ul.deploylist li:hover .deploy_button a.label-light{
-			display:none;
-		}
+        ul.deploylist li:hover .deploy_button a.label-light{
+            display:none;
+        }
 
-		details {
-			margin-left: 30px;
-			color: #888;
-			font-weight: normal
-		}
+        details {
+            margin-left: 30px;
+            color: #888;
+            font-weight: normal
+        }
 
-		details summary {
-			margin-left: -30px;
-			color: black;
-			font-weight: bold;
-		}
+        details summary {
+            margin-left: -30px;
+            color: black;
+            font-weight: bold;
+        }
 
-	</style>
+    </style>
 
-	";
-	echo $css;
+    ";
+    echo $css;
 }
 
 ?>

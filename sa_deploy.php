@@ -16,6 +16,7 @@ $SA_DEPLOY_KEYCACHE = array();
 
 $SA_DEPLOY_USERNAME = 'GetSimpleCMS';
 $SA_DEPLOY_REPO     = 'GetSimpleCMS';
+$SA_LOCALCACHEPATH  = 'sa_deploy/local_cache';
 
 function init_plugin($PLUGIN_ID){
     $thisfile = basename(__FILE__, ".php"); // Plugin File
@@ -40,8 +41,8 @@ if(!function_exists('debugLog')){
     }
 }
 
-// init
-if(function_exists('register_plugin')) init_plugin($PLUGIN_ID);
+// init inside GS or outside
+if( defined('IN_GS') && function_exists('register_plugin')) init_plugin($PLUGIN_ID);
 else start();
 
 function local_i18n_r($token,$default = ''){
@@ -307,10 +308,11 @@ class Api{
 }
 
 function cache_url($url, $nocache = FALSE) {
+    GLOBAL $SA_LOCALCACHEPATH;    
     // @todo do not cache messages api rate limiting
     // settings
     $cachetime = 604800; //one week
-    $where = defined('GSCACHEPATH') ? GSCACHEPATH : 'sa_deploy/cache/';
+    $where = defined('GSCACHEPATH') ? GSCACHEPATH : $SA_LOCALCACHEPATH;
 
     if ( !is_dir($where)) {
         // mkdir($where);
